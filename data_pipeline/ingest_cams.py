@@ -272,11 +272,73 @@ def plan_outstanding(kind: str, start: str, end: str, manifest: dict | None = No
     return out
 
 
+MAX_ACTIVE_JOBS = 8  # ADS rejects new requests beyond ~8 queued+running per user per dataset
+QUEUE_STAGES = [("single", "2025-01-01", "2025-12-31"), ("multi", "2025-01-01", "2025-12-31"),
+                ("single", "2024-01-01", "2024-12-31"), ("multi", "2024-01-01", "2024-12-31"),
+                ("single", "2019-10-01", "2020-02-29"), ("multi", "2019-10-01", "2020-02-29"),
+                ("single", "2018-01-01", "2020-06-30"), ("multi", "2018-01-01", "2020-06-30"),
+                ("single", "2015-01-01", "2017-12-31"), ("multi", "2015-01-01", "2017-12-31"),
+                ("single", "2020-07-01", "2022-12-31"), ("multi", "2020-07-01", "2022-12-31")]
+
+
+def ads_jobs() -> list[dict]:
+    """Every job on this ADS account (all pages), each with its chunk (kind, start, end)."""
+    import requests
+    out, url, params = [], f"{_api()}/jobs", {"limit": 100}
+    while url:
+        r = requests.get(url, params=params, headers=_headers(), timeout=60).json()
+        out += r.get("jobs", [])
+        nxt = [l for l in r.get("links", []) if l.get("rel") == "next"]
+        url, params = (nxt[0]["href"], None) if nxt else (None, None)
+    for j in out:
+        j["chunk"] = _job_chunk(j["jobID"]) if j.get("status") in ("accepted", "running", "successful") else None
+    return out
+
+
+def keep_queue_full(stages=QUEUE_STAGES, max_active: int = MAX_ACTIVE_JOBS) -> int:
+    """Top the ADS queue up to `max_active`, highest-priority missing chunks first.
+
+    Needs only the ADS key: coverage comes from ADS's own job history (successful, running,
+    queued), so it can run anywhere - e.g. a scheduled GitHub Action while the laptop sleeps.
+    Returns the number of new submissions."""
+    import requests
+    jobs = ads_jobs()
+    active = sum(j["status"] in ("accepted", "running") for j in jobs)
+    covered = {(k, d) for j in jobs if j["chunk"] for k, a, b in [j["chunk"]] for d in pd.date_range(a, b)}
+    covered |= {(k, d) for k in ("single", "multi") for d in covered_dates(k)}  # local files, if any
+    free = max(0, max_active - active)
+    print(f"[cams] ADS active {active}/{max_active}, submitting up to {free}", flush=True)
+    sent = 0
+    for kind, start, end in stages:
+        if sent >= free:
+            break
+        for k, a, b in plan_chunks(start, end):
+            if k != kind or sent >= free:
+                continue
+            days = [d for d in pd.date_range(a, b) if (k, d) not in covered]
+            if not days:
+                continue
+            a, b = f"{days[0]:%Y-%m-%d}", f"{days[-1]:%Y-%m-%d}"  # uncovered tail/head of a chunk
+            r = requests.post(f"{_api()}/processes/{config.CAMS_DATASET}/execution",
+                              json={"inputs": build_request(k, a, b)}, headers=_headers(), timeout=120)
+            if r.status_code >= 400:
+                print(f"[cams] ADS refused {k} {a}..{b}: HTTP {r.status_code} {r.text[:150]}", flush=True)
+                return sent
+            covered |= {(k, d) for d in pd.date_range(a, b)}
+            sent += 1
+            print(f"[cams] submitted {k} {a}..{b} -> {r.json()['jobID'][:8]}", flush=True)
+    return sent
+
+
 def collect() -> dict:
-    """Download every finished manifest job whose file is missing; report status counts."""
+    """Download every finished job (manifest + ADS job history) whose file is missing."""
     import requests
     from collections import Counter
     m, status = read_manifest(), Counter()
+    for j in ads_jobs():  # pick up jobs submitted elsewhere (GitHub Action, earlier runners)
+        if j["chunk"] and j["jobID"] not in m:
+            m[j["jobID"]] = list(j["chunk"])
+    _write_manifest(m)
     for job_id, (kind, a, b) in list(m.items()):
         path = config.RAW_CAMS / f"cams_fc_{kind}_{a}_{b}.zip"
         if path.exists():
@@ -404,7 +466,12 @@ def station_table(paths: list[Path], stations: pd.DataFrame) -> pd.DataFrame:
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("start")
-    ap.add_argument("end")
+    ap.add_argument("start", help="YYYY-MM-DD, or 'queue' to top up the ADS queue, 'collect' to download")
+    ap.add_argument("end", nargs="?")
     a = ap.parse_args()
-    fetch(a.start, a.end)
+    if a.start == "queue":
+        keep_queue_full()
+    elif a.start == "collect":
+        collect()
+    else:
+        fetch(a.start, a.end)

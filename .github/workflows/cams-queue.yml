@@ -1,0 +1,30 @@
+# Keeps the Copernicus ADS queue topped up (max ~8 queued/running jobs per user) so the
+# CAMS forecast archive keeps downloading while no laptop is online. Jobs run on ADS's
+# servers; results are collected later from Colab with `ingest_cams.collect()`.
+# Needs one repository secret: ADS_KEY (Settings -> Secrets and variables -> Actions).
+name: cams-queue
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: cams-queue
+  cancel-in-progress: false
+
+jobs:
+  top-up:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q pandas numpy xarray python-dotenv requests
+      - name: Top up ADS queue
+        env:
+          ADS_KEY: ${{ secrets.ADS_KEY }}
+          VAAYU_DRIVE_ROOT: /tmp/vaayu
+        run: python -m data_pipeline.ingest_cams queue
