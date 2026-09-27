@@ -1,0 +1,25 @@
+# Core ML (Colab already ships torch; torch-geometric is installed on top)
+torch
+torch-geometric
+
+# Data
+pandas
+pyarrow
+duckdb
+numpy
+scipy
+xarray
+netCDF4
+cdsapi          # Copernicus ADS client for CAMS
+
+# Ingestion / config
+requests
+python-dotenv
+
+# Serving
+fastapi
+uvicorn
+
+# Tests
+pytest
+httpx

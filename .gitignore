@@ -1,0 +1,30 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# Environments
+venv/
+.venv/
+
+# Data / model artefacts must live on Google Drive, never in the repo
+data/
+models/
+logs/
+*.parquet
+*.nc
+*.grib
+*.zip
+*.pt
+*.pth
+*.ckpt
+*.csv
+
+# Notebook / editor noise
+.ipynb_checkpoints/
+.vscode/
+.idea/
