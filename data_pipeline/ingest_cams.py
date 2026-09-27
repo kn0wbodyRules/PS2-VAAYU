@@ -334,7 +334,7 @@ def collect() -> dict:
     """Download every finished job (manifest + ADS job history) whose file is missing."""
     import requests
     from collections import Counter
-    m, status = read_manifest(), Counter()
+    m, status, expired = read_manifest(), Counter(), []
     for j in ads_jobs():  # pick up jobs submitted elsewhere (GitHub Action, earlier runners)
         if j["chunk"] and j["jobID"] not in m:
             m[j["jobID"]] = list(j["chunk"])
@@ -347,21 +347,33 @@ def collect() -> dict:
         st = requests.get(f"{_api()}/jobs/{job_id}", headers=_headers(), timeout=60)
         st = st.json().get("status", "unknown") if st.ok else "unknown"
         if st == "successful":
-            href = requests.get(f"{_api()}/jobs/{job_id}/results", headers=_headers(),
-                                timeout=60).json()["asset"]["value"]["href"]
-            part = path.with_suffix(".zip.part")
-            with requests.get(href, stream=True, timeout=600) as r:
-                if r.status_code in (401, 403):
-                    r = requests.get(href, headers=_headers(), stream=True, timeout=600)
-                r.raise_for_status()
-                with open(part, "wb") as f:
-                    for c in r.iter_content(1 << 20):
-                        f.write(c)
-            part.replace(path)
-            print(f"[cams] downloaded {path.name}", flush=True)
-            status["downloaded"] += 1
+            try:
+                res = requests.get(f"{_api()}/jobs/{job_id}/results", headers=_headers(), timeout=60)
+                href = res.json()["asset"]["value"]["href"]
+                part = path.with_suffix(".zip.part")
+                with requests.get(href, stream=True, timeout=600) as r:
+                    if r.status_code in (401, 403):
+                        r = requests.get(href, headers=_headers(), stream=True, timeout=600)
+                    r.raise_for_status()
+                    with open(part, "wb") as f:
+                        for c in r.iter_content(1 << 20):
+                            f.write(c)
+                part.replace(path)
+                print(f"[cams] downloaded {path.name}", flush=True)
+                status["downloaded"] += 1
+            except Exception as e:  # ADS cache is load-dependent: results can be cleared
+                print(f"[cams] result no longer available for {kind} {a}..{b} ({type(e).__name__}); "
+                      f"re-requesting", flush=True)
+                expired.append((kind, a, b))
+                m.pop(job_id, None)  # drop the dead job so submit() doesn't skip its dates
+                status["expired"] += 1
         else:
             status[st] += 1
+    if expired:
+        # the GitHub queue job counts these as done (their jobs 'succeeded'), so resubmit here
+        _write_manifest(m)
+        m2 = submit(expired)
+        status["resubmitted"] = sum(1 for c in expired if list(c) in m2.values())
     print(f"[cams] manifest status: {dict(status)}", flush=True)
     return dict(status)
 
