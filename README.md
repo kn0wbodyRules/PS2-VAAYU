@@ -197,10 +197,13 @@ Endpoints:
 - `GET /health`
 - `GET /model`
 - `GET /stations`
-- `GET /forecast?station_id=ito&hours=72`
+- `GET /forecast?station_id=ito_cpcb&hours=72`
 - `POST /forecast/refresh`
+- `GET /fires?hours=24` (FIRMS stubble-burning overlay)
+- `GET /alerts?min_category=poor` (alert feed)
 
-The loader reloads automatically when `model.pt` is replaced.
+The loader reloads automatically when `model.pt` is replaced. The full request/response
+contract for the dashboard is in [docs/API.md](docs/API.md). CORS is open by default.
 
 ### Tests (CPU, synthetic data, nothing touches the real Drive)
 
@@ -229,4 +232,5 @@ The 2024-25 files label timestamps "+0000", but they are **IST**: ozone peaks at
 - [ ] Lock the final station list (`stations.csv`). Stations only in opencity need lat/lon added by hand; `ingest_opencity` lists them.
 - [ ] Check `ingest_opencity` header aliases against a real downloaded CSV.
 - [ ] First real CAMS pull: confirm the NetCDF dimension names match `ingest_cams._normalise`. The new ADS layout is handled; older `time`/`step` names are also mapped.
-- [ ] Not built yet: dashboard, alert rules layer, MODIS AOD (stretch).
+- [ ] Dashboard (separate frontend, built against [docs/API.md](docs/API.md)).
+- [ ] Not built yet: MODIS AOD (stretch).

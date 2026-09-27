@@ -101,6 +101,15 @@ def test_end_to_end(pipeline_env):
                               "stagnation_index"} <= set(fc[0])
     assert client.get("/forecast", params={"station_id": "nope"}).status_code == 404
 
+    fires = client.get("/fires", params={"hours": 240}).json()
+    assert fires["count"] == len(fires["fires"]) and {"lat", "lon", "timestamp", "frp"} <= set(fires["fires"][0])
+    al = client.get("/alerts", params={"min_category": "moderate"}).json()
+    assert isinstance(al["alerts"], list)
+    for a in al["alerts"]:
+        assert a["worst_category"] in ("moderate", "poor", "very_poor", "severe") and 1 <= a["first_lead_hour"] <= 72
+    cors = client.get("/health", headers={"Origin": "http://localhost:5173"})
+    assert cors.headers.get("access-control-allow-origin") in ("*", "http://localhost:5173")
+
 
 def test_met_change_propagates_to_later_chemistry():
     """A wind change in hour 1 of the met forecast must reach chemistry at later hours:
