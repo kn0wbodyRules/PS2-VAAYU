@@ -1,5 +1,7 @@
 # Secrets
 .env
+.env.*
+!.env.example
 
 # Python
 __pycache__/
@@ -11,18 +13,25 @@ __pycache__/
 venv/
 .venv/
 
-# Data / model artefacts must live on Google Drive, never in the repo
-data/
-models/
-logs/
+# Data / model artefacts must live on Google Drive, never in the repo.
+# Anchored to the repo root so a frontend's src/data/ or src/models/ is NOT ignored.
+/data/
+/models/
+/logs/
 *.parquet
 *.nc
 *.grib
-*.zip
 *.pt
 *.pth
 *.ckpt
-*.csv
+/*.zip
+/*.csv
+
+# Frontend (Node) - dependencies and build output are regenerated, never committed
+node_modules/
+frontend/dist/
+frontend/build/
+frontend/.next/
 
 # Notebook / editor noise
 .ipynb_checkpoints/
