@@ -226,6 +226,10 @@ The 2024-25 files label timestamps "+0000", but they are **IST**: ozone peaks at
 
 **Implication:** hourly *concentrations* for 2017–2023 have to come from somewhere else, either the OpenAQ history (`ingest_openaq hours`) or the Kaggle "Air Quality Data in India" `station_hour.csv` (2015–2020). Meanwhile, opencity 2024–25 gives two full years of recent ground truth, including two stubble-burning seasons.
 
+## References
+
+Papers, datasets and methods behind every design choice, with verified links: [docs/REFERENCES.md](docs/REFERENCES.md).
+
 ## Status and open items
 
 - [ ] Confirm OpenAQ's real Delhi coverage (pollutants per station, hourly density), then decide whether it's primary or live-only.
