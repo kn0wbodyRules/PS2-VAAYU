@@ -190,14 +190,14 @@ Hourly live cron:
 ### Serve
 
 ```bash
-uvicorn backend.main:app --reload
+uvicorn backend.main:app --host 0.0.0.0 --port 8010
 ```
 
 Endpoints:
 - `GET /health`
 - `GET /model`
 - `GET /stations`
-- `GET /forecast?station_id=ito_cpcb&hours=72`
+- `GET /forecast?station_id=ito_cpcb&hours=72&as_of=2025-11-05` (`as_of` optional: replay a past date)
 - `POST /forecast/refresh`
 - `GET /fires?hours=24` (FIRMS stubble-burning overlay)
 - `GET /alerts?min_category=poor` (alert feed)

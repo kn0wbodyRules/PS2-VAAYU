@@ -3,10 +3,11 @@
 Run locally:
 
 ```bash
-uvicorn backend.main:app --host 0.0.0.0 --port 8000
+uvicorn backend.main:app --host 0.0.0.0 --port 8010
 ```
 
-Base URL `http://localhost:8000`. Interactive docs: `http://localhost:8000/docs`.
+Base URL `http://localhost:8010`. Interactive docs: `http://localhost:8010/docs`.
+(Port 8010, not 8000: on the dev laptop Docker Desktop/WSL already holds 8000.)
 CORS is open (`*`) by default so a dev server on another port can call it; restrict with
 `VAAYU_CORS_ORIGINS="http://localhost:5173,https://your.site"`.
 
@@ -29,8 +30,14 @@ Production model metadata: `run_id`, `epoch`, `val_loss`, `saved_at`, `history` 
 [{"station_id": "ito_cpcb", "lat": 28.6286, "lon": 77.2410}, ...]
 ```
 
-## `GET /forecast?station_id=<id>&hours=<1..72>`  → map + time slider + charts
-Both parameters optional (default: all stations, 72 h). One row per station per lead hour.
+## `GET /forecast?station_id=<id>&hours=<1..72>&as_of=<date>`  → map + time slider + charts
+All parameters optional (default: all stations, 72 h, latest data). One row per station per lead hour.
+
+**`as_of` (demo / replay):** an ISO date or datetime, e.g. `2025-11-05` or `2025-11-12T06:00Z`.
+Returns the forecast the system would have issued at that moment (newest CAMS run usable then;
+observations after `as_of` are never used). Data exists for **2024-01 → 2025-12**; the latest
+observations end 2025-12-31, so without `as_of` you get the forecast from 31 Dec 2025.
+Good demo dates: **Oct–Nov 2025** (stubble-burning season). `/fires` and `/alerts` take the same `as_of`.
 ```json
 {
   "run_id": "run_20260928T060000Z",
@@ -64,7 +71,7 @@ Both parameters optional (default: all stations, 72 h). One row per station per 
 ## `POST /forecast/refresh`
 Recomputes the forecast from the latest processed data. `{"rows": 4032, "run_id": "..."}`
 
-## `GET /fires?hours=<1..240>`  → stubble-burning overlay
+## `GET /fires?hours=<1..240>&as_of=<date>`  → stubble-burning overlay
 Fire detections (NASA FIRMS VIIRS) in Punjab/Haryana in the `hours` before the forecast start.
 ```json
 {"issued_from": "2025-11-01T12:00:00+00:00", "hours": 24, "count": 1532,
@@ -73,7 +80,7 @@ Fire detections (NASA FIRMS VIIRS) in Punjab/Haryana in the `hours` before the f
 `frp` = fire radiative power (MW): use for marker size. Draw the plume path from the fire
 cluster towards Delhi along the forecast wind (`u10`, `v10`).
 
-## `GET /alerts?min_category=<moderate|poor|very_poor|severe>`  → alert feed
+## `GET /alerts?min_category=<moderate|poor|very_poor|severe>&as_of=<date>`  → alert feed
 Default `poor`. One entry per station forecast to reach that category or worse, most severe first.
 ```json
 {"issued_from": "2025-11-01T12:00:00+00:00", "min_category": "poor",

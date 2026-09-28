@@ -45,23 +45,37 @@ def _clean(records: list[dict]) -> list[dict]:
     return out
 
 
-def _current_forecast(force: bool = False) -> pd.DataFrame:
+_cache: dict = {}  # (run_id, as_of) -> (computed_at, forecast df)
+
+
+def _current_forecast(force: bool = False, as_of: str | None = None) -> pd.DataFrame:
+    """Latest forecast, or the one the system would have issued at `as_of` (demo/replay).
+    Cached in memory per model and date for MAX_FORECAST_AGE."""
     try:
         model, ckpt = get_model()
     except ModelNotAvailable as e:
         raise HTTPException(503, str(e))
-    path = config.FORECAST_CURRENT_FILE
-    if not force and path.exists():
-        cached = pd.read_parquet(path)
-        age = pd.Timestamp.now(tz="UTC") - pd.Timestamp(path.stat().st_mtime, unit="s", tz="UTC")
-        if not cached.empty and cached["run_id"].iloc[0] == ckpt["run_id"] and age < MAX_FORECAST_AGE:
-            return cached
+    if as_of is not None:
+        try:
+            as_of = inference._utc(as_of).isoformat()
+        except ValueError:
+            raise HTTPException(422, f"as_of must be an ISO date/time, got {as_of!r}")
+    key = (ckpt["run_id"], as_of)
+    now = pd.Timestamp.now(tz="UTC")
+    if not force and key in _cache and now - _cache[key][0] < MAX_FORECAST_AGE:
+        return _cache[key][1]
     try:
-        return inference.forecast_from_drive(model, ckpt)
+        df = inference.forecast_as_of(model, ckpt, as_of)
     except FileNotFoundError as e:
         raise HTTPException(503, f"processed data missing: {e}")
     except ValueError as e:
         raise HTTPException(503, f"cannot build forecast input: {e}")
+    except OSError as e:  # e.g. Google Drive still streaming a file that Colab just rewrote
+        raise HTTPException(503, f"data file not readable yet (Drive still syncing?): {e}")
+    _cache[key] = (now, df)
+    if as_of is None:
+        df.to_parquet(config.FORECAST_CURRENT_FILE, index=False)
+    return df
 
 
 @app.get("/health")
@@ -92,8 +106,9 @@ def stations():
 
 @app.get("/forecast")
 def forecast(station_id: str | None = None,
-             hours: int = Query(config.HORIZON_HOURS, ge=1, le=config.HORIZON_HOURS)):
-    df = _current_forecast()
+             hours: int = Query(config.HORIZON_HOURS, ge=1, le=config.HORIZON_HOURS),
+             as_of: str | None = None):
+    df = _current_forecast(as_of=as_of)
     if station_id is not None:
         df = df[df["station_id"] == station_id]
         if df.empty:
@@ -111,24 +126,25 @@ def refresh():
 
 
 @app.get("/fires")
-def fires(hours: int = Query(24, ge=1, le=240)):
+def fires(hours: int = Query(24, ge=1, le=240), as_of: str | None = None):
     """Fire detections in the `hours` before the forecast start (plume-source overlay)."""
     path = config.DATA_PROCESSED / "fire_detections.parquet"
     if not path.exists():
         raise HTTPException(503, "no fire detections processed yet")
-    df = _current_forecast()
+    df = _current_forecast(as_of=as_of)
     t0 = pd.Timestamp(df["issued_from"].iloc[0]) if len(df) else pd.Timestamp.now(tz="UTC")
-    f = pd.read_parquet(path)
-    f = f[(f["timestamp"] > t0 - pd.Timedelta(hours=hours)) & (f["timestamp"] <= t0)]
+    f = pd.read_parquet(path, filters=[("timestamp", ">", t0 - pd.Timedelta(hours=hours)),
+                                       ("timestamp", "<=", t0)])
     return {"issued_from": t0.isoformat(), "hours": hours, "count": len(f),
             "fires": _clean(f[["lat", "lon", "timestamp", "frp"]].to_dict("records"))}
 
 
 @app.get("/alerts")
-def alerts(min_category: str = Query("poor", pattern="^(moderate|poor|very_poor|severe)$")):
+def alerts(min_category: str = Query("poor", pattern="^(moderate|poor|very_poor|severe)$"),
+           as_of: str | None = None):
     """One alert per station whose forecast AQI reaches `min_category` or worse:
     when it first crosses, the worst category, and the peak AQI within the horizon."""
-    df = _current_forecast()
+    df = _current_forecast(as_of=as_of)
     thr = aqi.CATEGORIES.index(min_category)
     df = df.dropna(subset=["aqi"]).assign(cat_idx=lambda d: d["category"].map(aqi.CATEGORIES.index))
     out = []

@@ -90,3 +90,37 @@ def forecast_from_drive(model, ckpt: dict) -> pd.DataFrame:
     config.FORECAST_CURRENT_FILE.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(config.FORECAST_CURRENT_FILE, index=False)
     return df
+
+
+def _utc(t) -> pd.Timestamp:
+    t = pd.Timestamp(t)
+    return t.tz_localize("UTC") if t.tzinfo is None else t.tz_convert("UTC")
+
+
+def _max_time(path, column: str) -> pd.Timestamp:
+    """Latest value of a timestamp column from parquet row-group statistics (no data read)."""
+    import pyarrow.parquet as pq
+    pf = pq.ParquetFile(path)
+    j = pf.schema_arrow.get_field_index(column)
+    return max(_utc(pf.metadata.row_group(i).column(j).statistics.max)
+               for i in range(pf.metadata.num_row_groups))
+
+
+def forecast_as_of(model, ckpt: dict, as_of=None) -> pd.DataFrame:
+    """Forecast from the newest CAMS run usable at `as_of` (default: latest data).
+
+    Reads only the needed window (~4 days of features, ~7 days of CAMS) instead of the full
+    files, which matters on a streamed Google Drive. Observations after `as_of` are never
+    read, so a past date gives the forecast the system would have issued then."""
+    end = _utc(as_of) if as_of is not None else _max_time(config.FEATURES_FILE, "time")
+    start = end - pd.Timedelta(days=3)
+    features = pd.read_parquet(config.FEATURES_FILE, filters=[("time", ">=", start), ("time", "<=", end)])
+    if features.empty:
+        raise ValueError(f"no observations in {start} .. {end}")
+    cams = pd.read_parquet(config.CAMS_STATION_FILE,
+                           filters=[("issue_time", ">=", start - pd.Timedelta(days=5)), ("issue_time", "<=", end)])
+    fires_path = config.DATA_PROCESSED / "fire_detections.parquet"
+    fires = (pd.read_parquet(fires_path, filters=[("timestamp", ">=", start - pd.Timedelta(days=2)),
+                                                  ("timestamp", "<=", end)])
+             if fires_path.exists() else None)
+    return forecast(model, ckpt, features, cams, fires)
