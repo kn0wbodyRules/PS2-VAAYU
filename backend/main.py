@@ -174,5 +174,17 @@ from backend import frontend_api as _frontend_api
 
 app.include_router(_frontend_api.router)
 _DIST = _Path(__file__).resolve().parents[1] / "frontend" / "dist"
+
+
+@app.middleware("http")
+async def _no_cache_html(request, call_next):
+    # index.html must never be cached: it names the hashed JS bundle, so a stale copy keeps
+    # running the previous build (e.g. the old sidebar) until a hard reload.
+    response = await call_next(request)
+    if response.headers.get("content-type", "").startswith("text/html"):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 if _DIST.is_dir():
     app.mount("/", _StaticFiles(directory=_DIST, html=True), name="dashboard")

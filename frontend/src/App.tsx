@@ -158,12 +158,14 @@ export const App: React.FC = () => {
   const handleLogin = (newUser: AuthUser) => {
     setUser(newUser);
     setShowIntroPortal(true);
+    setActiveTab('home'); // don't carry the previous user's tab into a new session
     localStorage.setItem('aeris_auth_user', JSON.stringify(newUser));
   };
 
   const handleLogout = () => {
     setUser(null);
     setShowIntroPortal(false);
+    setActiveTab('home'); // don't carry the previous user's tab into a new session
     localStorage.removeItem('aeris_auth_user');
     localStorage.removeItem('vaayu_auth_user');
   };
