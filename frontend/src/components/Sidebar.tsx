@@ -16,7 +16,8 @@ import {
   RotateCw,
   LogOut,
   AlertTriangle,
-  Activity
+  Activity,
+  ArrowLeftRight,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -25,6 +26,7 @@ interface SidebarProps {
     identifier: string;
   };
   onLogout: () => void;
+  onSwitchRole?: () => void;
   activeTab: AuthorityTab;
   onTabChange: (tab: AuthorityTab) => void;
   onOpenSystemStatus: () => void;
@@ -87,6 +89,7 @@ export const DiscoBall: React.FC<{ className?: string }> = ({ className = 'w-7 h
 export const Sidebar: React.FC<SidebarProps> = ({
   user,
   onLogout,
+  onSwitchRole,
   activeTab,
   onTabChange,
   onOpenSystemStatus,
@@ -158,6 +161,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'map' as AuthorityTab, label: 'Air Quality Map', subtitle: 'Stations across Delhi-NCR', icon: Map },
       ]
     : authorityNavItems;
+
+  const switchLabel = user.role === 'authority' ? 'Switch to Citizen view' : 'Switch to Authority view';
 
   return (
     <>
@@ -573,6 +578,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
             </div>
 
+            {/* Switch Role Micro Button */}
+            {onSwitchRole && (
+              <div className="relative group">
+                <button
+                  type="button"
+                  onClick={onSwitchRole}
+                  className="w-10 h-10 rounded-xl bg-transparent hover:bg-[#0e3d2c] border border-transparent hover:border-emerald-600/60 text-white/70 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                  title={switchLabel}
+                  aria-label={switchLabel}
+                >
+                  <ArrowLeftRight className="w-4 h-4" />
+                </button>
+                <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-xl bg-neutral-900 border border-white/20 text-white text-xs font-semibold whitespace-nowrap shadow-2xl opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
+                  {switchLabel}
+                </div>
+              </div>
+            )}
+
             {/* Logout Micro Button */}
             <div className="relative group">
               <button
@@ -627,6 +650,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span>Log out</span>
               </button>
             </div>
+            {onSwitchRole && (
+              <button
+                type="button"
+                onClick={onSwitchRole}
+                className="mt-2.5 w-full px-2.5 py-1.5 rounded-lg bg-transparent hover:bg-[#0e3d2c] border border-emerald-700/60 text-[#a7d0bf] hover:text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                title={switchLabel}
+              >
+                <ArrowLeftRight className="w-3.5 h-3.5" />
+                <span>{switchLabel}</span>
+              </button>
+            )}
           </div>
         )}
       </aside>

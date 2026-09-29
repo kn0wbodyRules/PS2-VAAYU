@@ -162,6 +162,20 @@ export const App: React.FC = () => {
     localStorage.setItem('aeris_auth_user', JSON.stringify(newUser));
   };
 
+  // Demo convenience: flip between the two roles without going back through the login page.
+  // Uses the same demo identities as the login page's Google / 1-click buttons (no real auth).
+  const handleSwitchRole = () => {
+    if (!user) return;
+    const next: AuthUser = user.role === 'authority'
+      ? { role: 'civilian', identifier: 'citizen.delhi@gmail.com', name: 'Priya Sharma', badge: 'Google Verified Citizen' }
+      : { role: 'authority', identifier: 'AERIS-CAQM-0809', name: 'Dr. P. Nair (Joint Director)',
+          organization: 'Commission for Air Quality Management (CAQM)', badge: 'Level-3 GRAP Enforcement Clearance' };
+    setUser(next);
+    setActiveTab('home');
+    localStorage.setItem('aeris_auth_user', JSON.stringify(next));
+    window.scrollTo({ top: 0 });
+  };
+
   const handleLogout = () => {
     setUser(null);
     setShowIntroPortal(false);
@@ -236,6 +250,7 @@ export const App: React.FC = () => {
       <Sidebar
         user={user}
         onLogout={handleLogout}
+        onSwitchRole={handleSwitchRole}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         onOpenSystemStatus={() => setIsSystemStatusOpen(true)}
