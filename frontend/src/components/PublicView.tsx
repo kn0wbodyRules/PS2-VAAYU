@@ -10,8 +10,12 @@ interface PublicViewProps {
 export const PublicView: React.FC<PublicViewProps> = ({ forecasts }) => {
   const [selectedStationId, setSelectedStationId] = useState<string>('anand_vihar_dpcc');
   const [searchQuery, setSearchQuery] = useState('');
-  const [notifyThreshold, setNotifyThreshold] = useState<number>(300);
-  const [notificationConfigured, setNotificationConfigured] = useState(false);
+  const [notifyThreshold, setNotifyThreshold] = useState<number>(() => {
+    const saved = Number(localStorage.getItem('aeris_citizen_threshold'));
+    return saved >= 100 && saved <= 500 ? saved : 300;
+  });
+  // result of checking the real 72 h forecast against the threshold (no fake 'you will be alerted')
+  const [thresholdCheck, setThresholdCheck] = useState<string | null>(null);
   const [showDetailedNumbers, setShowDetailedNumbers] = useState(false);
 
   // Filter stations by search
@@ -66,8 +70,12 @@ export const PublicView: React.FC<PublicViewProps> = ({ forecasts }) => {
 
   const handleNotifySubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setNotificationConfigured(true);
-    setTimeout(() => setNotificationConfigured(false), 4000);
+    localStorage.setItem('aeris_citizen_threshold', String(notifyThreshold));
+    const hit = hours.find((h) => h.hour_offset > 0 && h.aqi.mean >= notifyThreshold);
+    const name = currentForecast?.station.name ?? 'this station';
+    setThresholdCheck(hit
+      ? `Forecast: ${name} is expected to reach AQI ${Math.round(hit.aqi.mean)} (${hit.category}) at +${hit.hour_offset}h, ${new Date(hit.timestamp).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' })} — above your threshold of ${notifyThreshold}.`
+      : `Forecast: ${name} stays below AQI ${notifyThreshold} for the next ${Math.max(0, hours.length - 1)} hours.`);
   };
 
   return (
@@ -337,10 +345,10 @@ export const PublicView: React.FC<PublicViewProps> = ({ forecasts }) => {
           <div className="space-y-1">
             <h4 className="font-heading font-normal text-base text-white flex items-center gap-1.5">
               <span className="material-symbols-outlined text-emerald-400 text-base">notifications</span>
-              <span>Proactive Citizen Alert Notification</span>
+              <span>Check My AQI Threshold</span>
             </h4>
             <p className="text-xs text-[#a7d0bf]">
-              Get notified automatically if air quality near <strong className="text-white font-bold">{currentForecast.station.name}</strong> is forecast to cross your threshold in the next 3 days.
+              See whether air quality near <strong className="text-white font-bold">{currentForecast.station.name}</strong> is forecast to cross your threshold in the next 3 days. Your threshold is remembered on this device; push/SMS alerts are not part of this prototype.
             </p>
           </div>
 
@@ -363,17 +371,15 @@ export const PublicView: React.FC<PublicViewProps> = ({ forecasts }) => {
               type="submit"
               className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#061d15] font-bold text-xs shadow-md transition-all shrink-0 cursor-pointer"
             >
-              Set Alert
+              Check Forecast
             </button>
           </form>
         </div>
 
-        {notificationConfigured && (
+        {thresholdCheck && (
           <div className="mt-3 p-3 rounded-xl bg-[#061d15] border border-emerald-500/60 text-emerald-200 text-xs flex items-center gap-2 animate-in fade-in">
             <span className="material-symbols-outlined text-[#16a34a] text-base">check_circle</span>
-            <span>
-              Notification active! You will be alerted 24 hours prior if {currentForecast.station.name} breaches AQI {notifyThreshold}.
-            </span>
+            <span>{thresholdCheck}</span>
           </div>
         )}
       </div>

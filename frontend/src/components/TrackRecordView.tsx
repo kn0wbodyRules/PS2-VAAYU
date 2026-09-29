@@ -449,11 +449,11 @@ export const TrackRecordView: React.FC<TrackRecordViewProps> = ({ records, stats
               Audit Log: Verified Historical Forecasts (+{selectedLeadTime})
             </h3>
             <p className="text-xs text-[#a7d0bf] mt-0.5">
-              Ground Truth directly from CPCB CAAQMS Stations
+              Ground truth: CPCB station measurements (held-out Oct–Dec 2025 test set)
             </p>
           </div>
           <span className="text-xs text-emerald-400 font-mono font-bold">
-            56 CAAQMS Ground Stations Synced
+            Anand Vihar · test forecasts vs measured
           </span>
         </div>
 

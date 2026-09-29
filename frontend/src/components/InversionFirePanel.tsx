@@ -238,7 +238,7 @@ export const InversionFirePanel: React.FC<InversionFirePanelProps> = ({
           <div className="space-y-1">
             <div className="flex justify-between text-[10px] text-[#a7d0bf] font-mono">
               <span>Fire Intensity: {Math.round(totalFRP)} MW</span>
-              <span>Corridor: 315° NW</span>
+              <span>Corridor: {plumes.length ? `${plumes[0].corridor_bearing_deg}° to Delhi` : 'no plume reaching Delhi'}</span>
             </div>
             <div className="w-full bg-emerald-950/80 rounded-full h-1.5 overflow-hidden flex">
               <div 

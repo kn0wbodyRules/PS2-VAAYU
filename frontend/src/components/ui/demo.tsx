@@ -11,6 +11,7 @@ export function Demo(props: Partial<typeof settings> & { onEnterDashboard?: () =
   const s = { ...settings, ...props };
   const [face, setFace] = useState<string | null>(null);
   const enteredRef = useRef(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let settled = false;
@@ -40,9 +41,45 @@ export function Demo(props: Partial<typeof settings> & { onEnterDashboard?: () =
     }
   };
 
+  // Auto-enter from the scroll container itself. The glyph animation's own progress stays at 0
+  // whenever it falls back to its static layout (slow first frame, reduced motion), so relying on
+  // onProgress alone left users stuck on this screen. Enter when the visitor has scrolled ~85% of
+  // the way down, or keeps scrolling down once already at the bottom.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const atBottom = () => el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
+    const onScroll = () => {
+      const max = el.scrollHeight - el.clientHeight;
+      if (max > 0 && el.scrollTop / max >= 0.85) handleEnter();
+    };
+    const onWheel = (e: WheelEvent) => { if (e.deltaY > 0 && atBottom()) handleEnter(); };
+    let touchY: number | null = null;
+    const onTouchStart = (e: TouchEvent) => { touchY = e.touches[0]?.clientY ?? null; };
+    const onTouchMove = (e: TouchEvent) => {
+      const y = e.touches[0]?.clientY;
+      if (touchY !== null && y !== undefined && touchY - y > 30 && atBottom()) handleEnter();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (['ArrowDown', 'PageDown', ' ', 'End'].includes(e.key) && atBottom()) handleEnter();
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    el.addEventListener('wheel', onWheel, { passive: true });
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: true });
+    el.addEventListener('keydown', onKey);
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+      el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('keydown', onKey);
+    };
+  }, [face]);
+
   return (
-    <div data-demo-scroll data-slipstream-demo tabIndex={0} role="region" aria-label="AERIS. Scroll to step inside."
-      style={{ width: "100%", height: "min(780px, 100svh)", overflowY: "auto", background: "#ffffff", containerType: "inline-size", fontFamily: face ?? "Arial, sans-serif" }}>
+    <div ref={scrollRef} data-demo-scroll data-slipstream-demo tabIndex={0} role="region" aria-label="AERIS. Scroll to step inside."
+      style={{ width: "100%", height: "100svh", overflowY: "auto", background: "#ffffff", containerType: "inline-size", fontFamily: face ?? "Arial, sans-serif" }}>
       <style>{`
         [data-slipstream-demo] [data-gp-caption]{inset:calc(var(--gp-word-bottom,50%) + 82px) 24px auto;justify-content:center;}
         [data-slipstream-demo] [data-gp-hint]{display:none;}

@@ -64,7 +64,7 @@ export const SystemStatusPanel: React.FC<SystemStatusPanelProps> = ({
           <span className="text-emerald-400 font-bold shrink-0">ℹ</span>
           <p className="leading-relaxed">
             <strong className="text-emerald-300 font-bold uppercase tracking-wider text-[11px] mr-1.5">Architecture:</strong>
-            CAMS Copernicus updates once daily (00:00 UTC) with ~6h global assimilation latency, while ground CAAQMS stations and NASA FIRMS fire detections refresh hourly.
+            AERIS uses the daily 00:00 UTC CAMS run, treated as available 12 h later; ground stations are hourly and NASA FIRMS has several satellite passes a day. This prototype replays processed historical data (no live ingestion running).
           </p>
         </div>
 
@@ -129,7 +129,7 @@ export const SystemStatusPanel: React.FC<SystemStatusPanelProps> = ({
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#061d15] font-black text-xs transition-all disabled:opacity-60 cursor-pointer shadow-md"
             >
               <span className={`material-symbols-outlined text-sm ${isRefreshing ? 'animate-spin' : ''}`}>sync</span>
-              <span>{isRefreshing ? 'Syncing...' : 'Trigger Fast Ingest (Live Demo)'}</span>
+              <span>{isRefreshing ? 'Recomputing...' : 'Recompute Forecast'}</span>
             </button>
           </div>
         </div>

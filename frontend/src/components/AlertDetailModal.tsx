@@ -13,7 +13,7 @@ interface AlertDetailModalProps {
 export const AlertDetailModal: React.FC<AlertDetailModalProps> = ({ 
   alert, 
   onClose,
-  initialTab = 'chat'
+  initialTab = 'why'
 }) => {
   if (!alert) return null;
 
@@ -49,7 +49,7 @@ export const AlertDetailModal: React.FC<AlertDetailModalProps> = ({
                 }`}
               >
                 <Bot className="w-3.5 h-3.5 text-emerald-300" />
-                <span className="text-xs font-sans">AI Chatbot</span>
+                <span className="text-xs font-sans">Q&amp;A (rule-based)</span>
               </button>
 
               {/* Notepad Icon Button: Expands on hover to reveal name (strictly in font-sans, NOT AI font) */}

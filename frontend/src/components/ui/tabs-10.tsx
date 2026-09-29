@@ -203,26 +203,33 @@ interface MessageItem {
   words?: string[];
 }
 
+// Rule-based (not an AI model): every answer is assembled only from the alert the backend
+// computed from the forecast, so nothing here can state a number the forecast didn't produce.
 function getCausalAnswer(question: string, alert?: Alert | null): string {
   if (!alert) {
-    return "Aeris AI Causal Agent active. All 56 CPCB telemetry feeds and NASA FIRMS fire radiance streams are synchronized.";
+    return "No active alert is selected. Open an alert card to ask about its causes, stations, GRAP actions or the CAMS correction.";
   }
   const lower = question.toLowerCase();
-  const { causal_drivers } = alert;
+  const d = alert.causal_drivers;
 
-  if (lower.includes('why') || lower.includes('stage iv') || lower.includes('cause') || lower.includes('trigger')) {
-    return `Physical & GNN Causal Drivers: Planetary boundary layer collapsed by -${causal_drivers.pblh_drop}m into a shallow 200m particulate trap. Surface winds dropped to ${causal_drivers.wind_speed} m/s, dropping ventilation capacity below the 2,000 m²/s stagnation limit. NASA FIRMS satellite telemetry registers active stubble fire influence of ${causal_drivers.fire_influence}/100 transporting dense plumes into the Yamuna basin.`;
+  if (lower.includes('why') || lower.includes('cause') || lower.includes('trigger') || lower.includes('reason')) {
+    return `${d.narrative} ${d.meteorological_factor}`;
   }
-  if (lower.includes('station') || lower.includes('anand vihar') || lower.includes('entrapment') || lower.includes('vulnerable')) {
-    return `Critical Entrapment Stations: The Graph Neural Network identifies ${causal_drivers.accumulation_stations.join(', ')} as having the highest node entrapment centrality. Anand Vihar faces acute inter-state transport pooling combined with shallow evening inversion.`;
+  if (lower.includes('station') || lower.includes('where') || lower.includes('area') || lower.includes('region')) {
+    return `${alert.region}. Stations forecast at Poor or worse in this zone: ${d.accumulation_stations.join(', ')}.`;
   }
-  if (lower.includes('grap') || lower.includes('measure') || lower.includes('action') || lower.includes('mandate')) {
-    return `Statutory CAQM Stage IV Interventions: Prohibit non-electric/non-CNG commercial trucks into Delhi, halt stone crushers and hot-mix plants, deploy round-the-clock mist-cannon wetting along Ring Road, and scale metro frequencies 4-fold.`;
+  if (lower.includes('grap') || lower.includes('measure') || lower.includes('action') || lower.includes('do')) {
+    return `${alert.grap_stage} (peak forecast AQI ${alert.peak_aqi}). ${alert.action_recommendations.join(' ')}`;
   }
-  if (lower.includes('cams') || lower.includes('physics') || lower.includes('gnn') || lower.includes('error')) {
-    return `Numerical Physics vs GNN Residual: Global Eulerian models (CAMS) underpredict Day-2 and Day-3 AQI by ~68 µg/m³ due to coarse 40km grid plume dilution. Aeris GNN corrects this residual using NASA FIRMS boundary nodes and station wind adjacency.`;
+  if (lower.includes('cams') || lower.includes('physics') || lower.includes('gnn') || lower.includes('model') || lower.includes('error')) {
+    return "AERIS forecasts PM2.5 as the CAMS physics forecast plus a correction learned by the graph neural network. " +
+      "For this alert: " + (d.narrative.split('. ').find((x) => x.includes('CAMS')) ?? 'see the Evidence Report') +
+      ". Held-out accuracy by lead time (vs CAMS and persistence) is on the Track Record tab.";
   }
-  return `Based on latest spatiotemporal graph inference: Atmospheric inversion score is ${causal_drivers.inversion_index}/100 and upwind stubble fire flux is ${causal_drivers.fire_influence}/100. Severe stagnation will pool over East & North Delhi within ${alert.lead_time_hours} hours. Pre-emptive execution of Stage IV measures is strongly advised.`;
+  if (lower.includes('fire') || lower.includes('stubble') || lower.includes('smoke')) {
+    return `Upwind fire influence at the forecast peak is ${d.fire_influence}/100 (FIRMS detections in Punjab/Haryana weighted by forecast wind direction and distance). ${d.chemical_factor}`;
+  }
+  return `Summary: ${alert.subtitle}. Inversion index ${d.inversion_index}/100, surface wind ${d.wind_speed} m/s, upwind fire influence ${d.fire_influence}/100, expected ${alert.start_time.replace('Expected: ', '')}. Ask "why", "which stations", "what GRAP actions", "fire" or "CAMS".`;
 }
 
 function ChatPanel({ alert }: { alert?: Alert | null }) {
@@ -230,8 +237,8 @@ function ChatPanel({ alert }: { alert?: Alert | null }) {
     {
       id: "init",
       sender: "assistant",
-      text: "Hello Officer. I am Aeris, your atmospheric intelligence agent. I have synthesized the spatiotemporal graph, NASA FIRMS satellite fire telemetry, and planetary boundary layer physics for this event. Ask me anything about the causal drivers, station entrapment, or GRAP emergency mandates.",
-      words: "Hello Officer. I am Aeris, your atmospheric intelligence agent. I have synthesized the spatiotemporal graph, NASA FIRMS satellite fire telemetry, and planetary boundary layer physics for this event. Ask me anything about the causal drivers, station entrapment, or GRAP emergency mandates.".split(" "),
+      text: "Rule-based Q&A: answers are built only from this alert's forecast data (not an AI model). Ask about the causal drivers, stations, GRAP actions, fire influence or the CAMS correction.",
+      words: "Rule-based Q&A: answers are built only from this alert's forecast data (not an AI model). Ask about the causal drivers, stations, GRAP actions, fire influence or the CAMS correction.".split(" "),
     },
   ]);
   const [status, setStatus] = useState<ChatStatus>("idle");
@@ -357,7 +364,7 @@ function ChatPanel({ alert }: { alert?: Alert | null }) {
                     ease: "linear",
                   }}
                 >
-                  AERIS AI Researcher synthesizing causal telemetry...
+                  Looking up this alert's forecast data...
                 </motion.span>
               </MarkerContent>
             </Marker>
@@ -479,10 +486,10 @@ function SettingsPanel() {
   );
 }
 
+// Voice and Settings were visual placeholders (no audio capture, toggles wired to nothing),
+// so only the rule-based Q&A is offered.
 const TABS_CONFIG = [
-  { value: "chat", label: "Chat", icon: MessageCircle },
-  { value: "voice", label: "Voice", icon: AudioLines },
-  { value: "settings", label: "Settings", icon: Settings },
+  { value: "chat", label: "Q&A (rule-based)", icon: MessageCircle },
 ];
 
 export interface TabsDemoProps {
@@ -538,8 +545,6 @@ const TabsDemo = ({ alert, className }: TabsDemoProps) => {
           >
             <AnimatePresence mode="wait" initial={false}>
               {tab === "chat" && <ChatPanel key="chat" alert={alert} />}
-              {tab === "voice" && <VoicePanel key="voice" />}
-              {tab === "settings" && <SettingsPanel key="settings" />}
             </AnimatePresence>
           </TabsContent>
         </div>

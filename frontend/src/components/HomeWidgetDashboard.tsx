@@ -877,12 +877,12 @@ export const HomeWidgetDashboard: React.FC<HomeWidgetDashboardProps> = ({
                     <span className="font-numbers font-black text-white text-sm">56 / 56</span>
                   </div>
                   <div>
-                    <span className="text-[#a7d0bf] block text-[10px] uppercase font-bold tracking-wider">Fire Nodes</span>
-                    <span className="font-numbers font-black text-amber-400 text-sm">5 Clusters</span>
+                    <span className="text-[#a7d0bf] block text-[10px] uppercase font-bold tracking-wider">Fire Hotspots</span>
+                    <span className="font-numbers font-black text-amber-400 text-sm">{fireHotspots.length}</span>
                   </div>
                   <div>
                     <span className="text-[#a7d0bf] block text-[10px] uppercase font-bold tracking-wider">Vectors</span>
-                    <span className="font-numbers font-black text-[#86efac] text-sm">315° NW</span>
+                    <span className="font-numbers font-black text-[#86efac] text-sm">{live.windFrom}° {live.compass}</span>
                   </div>
                   <div>
                     <span className="text-[#a7d0bf] block text-[10px] uppercase font-bold tracking-wider">Horizon</span>
@@ -909,12 +909,12 @@ export const HomeWidgetDashboard: React.FC<HomeWidgetDashboardProps> = ({
                     <span className="font-numbers font-black text-white text-sm">56 / 56 CPCB</span>
                   </div>
                   <div>
-                    <span className="text-[#a7d0bf] block text-[10px] uppercase font-bold tracking-wider">Fire Nodes</span>
-                    <span className="font-numbers font-black text-amber-400 text-sm">5 Clusters</span>
+                    <span className="text-[#a7d0bf] block text-[10px] uppercase font-bold tracking-wider">Fire Hotspots</span>
+                    <span className="font-numbers font-black text-amber-400 text-sm">{fireHotspots.length}</span>
                   </div>
                   <div>
                     <span className="text-[#a7d0bf] block text-[10px] uppercase font-bold tracking-wider">Vectors</span>
-                    <span className="font-numbers font-black text-[#86efac] text-sm">315° NW</span>
+                    <span className="font-numbers font-black text-[#86efac] text-sm">{live.windFrom}° {live.compass}</span>
                   </div>
                   <div>
                     <span className="text-[#a7d0bf] block text-[10px] uppercase font-bold tracking-wider">Horizon</span>

@@ -110,7 +110,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setTimeout(() => setJustRefreshed(false), 2500);
   };
 
-  const navItems: { 
+  const authorityNavItems: { 
     id: AuthorityTab; 
     label: string; 
     subtitle: string; 
@@ -149,6 +149,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: History,
     },
   ];
+
+  // Citizens get their own menu. Previously they saw the authority tabs, but App always renders
+  // the citizen advisory for them, so clicking any tab appeared to do nothing.
+  const navItems: typeof authorityNavItems = user.role === 'civilian'
+    ? [
+        { id: 'home' as AuthorityTab, label: 'Citizen Advisory', subtitle: 'Your local air quality', icon: LayoutDashboard },
+        { id: 'map' as AuthorityTab, label: 'Air Quality Map', subtitle: 'Stations across Delhi-NCR', icon: Map },
+      ]
+    : authorityNavItems;
 
   return (
     <>

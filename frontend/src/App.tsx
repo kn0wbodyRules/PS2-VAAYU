@@ -87,7 +87,7 @@ export const App: React.FC = () => {
 
   // System Status & Refresh
   const [dataSources, setDataSources] = useState<DataSourceStatus[]>([]);
-  const [lastRefreshTime, setLastRefreshTime] = useState<string>('Live (Hourly cycle)');
+  const [lastRefreshTime, setLastRefreshTime] = useState<string>('not yet refreshed');
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [isLoadingInitial, setIsLoadingInitial] = useState<boolean>(true);
   // which API calls fell back to bundled mock data (shown as a warning banner, never silently)
@@ -149,6 +149,12 @@ export const App: React.FC = () => {
     return w.length ? w.reduce((a, b) => a + b, 0) / w.length : null;
   }, [forecasts, selectedHour]);
 
+  // when the forecast shown was issued (the dashboard replays processed historical data)
+  const forecastStart = React.useMemo(() => {
+    const t = forecasts.values().next().value?.hours[0]?.timestamp;
+    return t ? new Date(t).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' }) + ' IST' : null;
+  }, [forecasts]);
+
   const handleLogin = (newUser: AuthUser) => {
     setUser(newUser);
     setShowIntroPortal(true);
@@ -195,6 +201,7 @@ export const App: React.FC = () => {
           onEnterDashboard={() => {
             setShowIntroPortal(false);
             setActiveTab('home');
+            window.scrollTo({ top: 0 }); // don't carry the intro's scroll offset into the dashboard
           }}
         />
       </div>
@@ -203,7 +210,7 @@ export const App: React.FC = () => {
 
   const getPageTitle = (tab: AuthorityTab, role?: string): string => {
     if (role === 'civilian') {
-      return 'CITIZEN ADVISORY';
+      return tab === 'map' ? 'AIR QUALITY MAP' : 'CITIZEN ADVISORY';
     }
     switch (tab) {
       case 'home':
@@ -264,6 +271,11 @@ export const App: React.FC = () => {
           >
             {getPageTitle(activeTab, user.role)}
           </h1>
+          {forecastStart && (
+            <p className="mt-2 text-xs text-[#a7d0bf] font-mono">
+              Forecast issued {forecastStart} · historical replay of processed data (not a live feed)
+            </p>
+          )}
         </div>
 
         {/* Dynamic Operational Content */}
@@ -280,7 +292,7 @@ export const App: React.FC = () => {
                 </p>
               </div>
             </div>
-          ) : user.role === 'civilian' ? (
+          ) : user.role === 'civilian' && activeTab !== 'map' ? (
             /* Simplified Public Citizen Experience */
             <div className="space-y-4">
               <div className="flex items-center justify-between bg-[#0a2e21] px-4 py-2.5 rounded-xl border border-emerald-600/40 shadow-sm text-white">
