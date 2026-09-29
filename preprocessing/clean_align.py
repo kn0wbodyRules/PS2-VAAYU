@@ -252,7 +252,8 @@ def clean_fires(raw: pd.DataFrame) -> pd.DataFrame:
     df = raw.dropna(subset=["lat", "lon", "timestamp"]).copy()
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
     df["frp"] = df["frp"].fillna(df["frp"].median()).clip(lower=0)
-    return df.drop_duplicates(["lat", "lon", "timestamp"])[["lat", "lon", "timestamp", "frp"]]
+    cols = ["lat", "lon", "timestamp", "frp"] + [c for c in ("brightness", "confidence") if c in df]
+    return df.drop_duplicates(["lat", "lon", "timestamp"])[cols]  # brightness/confidence for the map
 
 
 def _read_raw_hourly(folder, pattern: str = "*.parquet") -> pd.DataFrame:

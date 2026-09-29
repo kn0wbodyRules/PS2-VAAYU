@@ -226,6 +226,32 @@ The 2024-25 files label timestamps "+0000", but they are **IST**: ozone peaks at
 
 **Implication:** hourly *concentrations* for 2017–2023 have to come from somewhere else, either the OpenAQ history (`ingest_openaq hours`) or the Kaggle "Air Quality Data in India" `station_hour.csv` (2015–2020). Meanwhile, opencity 2024–25 gives two full years of recent ground truth, including two stubble-burning seasons.
 
+## Dashboard (AERIS frontend)
+
+`frontend/` is the AERIS React + Vite dashboard. It reads the `/api/*` contract served by
+[backend/frontend_api.py](backend/frontend_api.py) from real data: the promoted model's
+forecast, the raw CAMS baseline, FIRMS fires, the station graph and the held-out test metrics.
+
+```bash
+cd frontend && npm ci && npm run build      # once, or after frontend changes
+cd .. && uvicorn backend.main:app --host 0.0.0.0 --port 8010
+```
+
+Open **http://127.0.0.1:8010**. FastAPI serves the built dashboard at `/`, so one process and
+one URL run the whole demo. For hot-reload development, run `npm run dev` in `frontend/`
+instead; it proxies `/api` to port 8010.
+
+- **Demo date:** there is no live observation feed, so the default forecast is from the latest
+  processed data (31 Dec 2025). Set `AERIS_AS_OF=2025-11-05` (backend) or `VITE_AS_OF=2025-11-05`
+  (frontend `.env.local`) to replay a stubble-season forecast. Only data available at that time
+  is used.
+- **Honesty rules:**
+  - Confidence bands are the empirical 10–90% test-set errors (`backend/calibration.json`).
+  - The third comparison line is **persistence**; no WRF-Chem forecasts are publicly available.
+  - Plume paths appear only when the forecast wind actually reaches Delhi.
+  - If the backend is unreachable, the UI falls back to bundled mock data and shows a red
+    **MOCK DATA** banner.
+
 ## References
 
 Papers, datasets and methods behind every design choice, with verified links: [docs/REFERENCES.md](docs/REFERENCES.md).

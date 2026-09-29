@@ -1,0 +1,287 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #061d15;
+    --foreground: #ffffff;
+    --card: #0a2e21;
+    --card-foreground: #ffffff;
+    --popover: #0a2e21;
+    --popover-foreground: #ffffff;
+    --primary: #10b981;
+    --primary-foreground: #061d15;
+    --secondary: #0e3d2c;
+    --secondary-foreground: #ffffff;
+    --muted: #072118;
+    --muted-foreground: #a7d0bf;
+    --accent: #124735;
+    --accent-foreground: #ffffff;
+    --border: #134e38;
+    --ring: #34d399;
+  }
+
+  html {
+    font-size: 16.5px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  /* Editorial serif font for brand and headings */
+  .font-aeris, .font-vaayu, .font-danfo, .danfo-regular, .font-brand {
+    font-family: "Newsreader", "Playfair Display", Georgia, serif;
+    font-weight: 500;
+    font-style: normal;
+    letter-spacing: -0.01em;
+  }
+
+  /* Main Page Titles in Limelight */
+  h1, .font-title, .font-limelight {
+    font-family: "Limelight", cursive, serif;
+    font-weight: 400;
+    font-style: normal;
+    letter-spacing: 0.03em;
+  }
+
+  /* Subheadings like "Central Telemetry Overview", Section Headings, and Righteous Elements in Archivo Black */
+  h2, h3, .font-heading, .font-subheading, .font-archivo, .font-archivo-black, .font-righteous, .righteous, .righteous-regular {
+    font-family: 'Archivo Black', 'Plus Jakarta Sans', sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    letter-spacing: -0.01em;
+  }
+
+  /* Explicit override wherever righteous is referenced */
+  .font-righteous, .righteous, .righteous-regular {
+    font-family: 'Archivo Black', 'Plus Jakarta Sans', sans-serif !important;
+  }
+
+  h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-weight: 600;
+  }
+
+  .font-numbers, .metric-number {
+    font-family: 'Archivo Black', 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: 0.03em;
+  }
+
+  /* Retro Monospace / Pixel AI Font */
+  .font-vt323, .font-ai, .font-pixel {
+    font-family: 'VT323', monospace;
+    letter-spacing: 0.04em;
+  }
+
+  /* Archivo Black Display Font */
+  .font-archivo, .font-archivo-black {
+    font-family: 'Archivo Black', 'Plus Jakarta Sans', sans-serif;
+    font-weight: 400;
+  }
+
+  /* Force 100% solid black background and white text for Dynamic Island */
+  .dynamic-island-black {
+    background-color: #000000 !important;
+    background: #000000 !important;
+    color: #ffffff !important;
+  }
+
+  /* Prevent browser autofill from turning inputs light blue */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover, 
+  input:-webkit-autofill:focus, 
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #0a2e21 inset !important;
+    -webkit-text-fill-color: #f0fdf4 !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+}
+
+/* Material Symbols Outlined Icon utility */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom scrollbars in clean white and forest green */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #061d15;
+}
+::-webkit-scrollbar-thumb {
+  background: #14533c;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #10b981;
+}
+
+/* Leaflet map green and white theme styling */
+.leaflet-container {
+  background-color: #061d15 !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
+.leaflet-tile-pane {
+  filter: contrast(1.05) saturate(0.95);
+}
+
+.leaflet-popup-content-wrapper {
+  background: #0a2e21 !important;
+  color: #ffffff !important;
+  border: 1px solid #134e38 !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4) !important;
+  padding: 0 !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  line-height: 1.4 !important;
+}
+
+.leaflet-popup-tip {
+  background: #0a2e21 !important;
+  border: 1px solid #134e38 !important;
+}
+
+/* Disco-ish Green dynamic lighting animations for Dynamic Island AI Agent */
+@keyframes disco-green-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes disco-glow-pulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 16px rgba(16, 185, 129, 0.4),
+      0 0 32px rgba(52, 211, 153, 0.2),
+      inset 0 0 15px rgba(5, 223, 114, 0.2);
+  }
+  50% {
+    box-shadow: 
+      0 0 32px rgba(5, 223, 114, 0.8),
+      0 0 60px rgba(16, 185, 129, 0.45),
+      inset 0 0 25px rgba(163, 230, 53, 0.35);
+  }
+}
+
+@keyframes disco-sweep {
+  0% {
+    transform: translateX(-150%) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(250%) skewX(-20deg);
+  }
+}
+
+.disco-green-text {
+  background: linear-gradient(
+    90deg,
+    #10b981 0%,
+    #05df72 20%,
+    #a3e635 40%,
+    #00ff87 60%,
+    #34d399 80%,
+    #10b981 100%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: disco-green-flow 2.8s linear infinite;
+  display: inline-block;
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.55));
+}
+
+.disco-green-card {
+  animation: disco-glow-pulse 3s ease-in-out infinite;
+}
+
+/* Tailwind utility alias */
+.animate-disco-green {
+  background: linear-gradient(
+    90deg,
+    #10b981 0%,
+    #05df72 20%,
+    #a3e635 40%,
+    #00ff87 60%,
+    #34d399 80%,
+    #10b981 100%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: disco-green-flow 2.4s linear infinite;
+  display: inline-block;
+  filter: drop-shadow(0 0 6px rgba(5, 223, 114, 0.5));
+}
+
+/* Dynamic Disco Ball Shimmer & Continuous Color Rotation */
+@keyframes disco-ball-cycle {
+  0% {
+    filter: hue-rotate(0deg) drop-shadow(0 0 6px rgba(16, 185, 129, 0.8));
+  }
+  25% {
+    filter: hue-rotate(25deg) drop-shadow(0 0 9px rgba(5, 223, 114, 0.95));
+  }
+  50% {
+    filter: hue-rotate(-20deg) drop-shadow(0 0 11px rgba(163, 230, 53, 0.9));
+  }
+  75% {
+    filter: hue-rotate(35deg) drop-shadow(0 0 9px rgba(0, 255, 135, 0.95));
+  }
+  100% {
+    filter: hue-rotate(0deg) drop-shadow(0 0 6px rgba(16, 185, 129, 0.8));
+  }
+}
+
+@keyframes disco-facet-twinkle {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.animate-disco-ball {
+  animation: disco-ball-cycle 2.6s linear infinite;
+  transform-origin: center;
+}
+
+.animate-disco-facet {
+  animation: disco-facet-twinkle 1.8s ease-in-out infinite;
+  transform-origin: center;
+}
+

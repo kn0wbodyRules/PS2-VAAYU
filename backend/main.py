@@ -159,3 +159,20 @@ def alerts(min_category: str = Query("poor", pattern="^(moderate|poor|very_poor|
     out.sort(key=lambda a: (-aqi.CATEGORIES.index(a["worst_category"]), a["first_lead_hour"]))
     return {"issued_from": df["issued_from"].iloc[0].isoformat() if len(df) else None,
             "min_category": min_category, "alerts": out}
+
+
+# ---------------------------------------------------------------------------------------
+# AERIS dashboard: its /api/* contract (backend/frontend_api.py) and the built frontend.
+# `npm run build` in frontend/ -> frontend/dist is served at "/", so one process and one
+# URL (http://localhost:8010) run the whole demo. API routes above take precedence.
+# ---------------------------------------------------------------------------------------
+from pathlib import Path as _Path
+
+from fastapi.staticfiles import StaticFiles as _StaticFiles
+
+from backend import frontend_api as _frontend_api
+
+app.include_router(_frontend_api.router)
+_DIST = _Path(__file__).resolve().parents[1] / "frontend" / "dist"
+if _DIST.is_dir():
+    app.mount("/", _StaticFiles(directory=_DIST, html=True), name="dashboard")
